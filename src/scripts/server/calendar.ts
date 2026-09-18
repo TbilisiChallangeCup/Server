@@ -51,12 +51,17 @@ export class Calendar {
                     points: 0
                 }
                 teamData.points = teamData.wins * 3 + teamData.draws * 1;
-                
-                console.log(teamData)
+            break;
+            case 1: 
+                const year = await Input('წელი', String)
+                const index = (await Input('გუნდის მიმდევრობა', String))
+                .split(' ')
+                .map(num => Number(num))
+
+                await this.DeleteTeam(year, index)
             break;
 
-            default:
-                break;
+            default: break;
         }
     }
 
