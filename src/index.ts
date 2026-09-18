@@ -6,4 +6,6 @@ import { Charts } from "./scripts/server/charts";
 import { Calendar } from "./scripts/server/calendar";
 // new Calendar().Init();
 import { News } from "./scripts/server/news";
-new News().Init()
+// new News().Init()
+import { Contact } from "./scripts/server/contacts";
+new Contact().Init();
