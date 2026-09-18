@@ -2,32 +2,28 @@ import path from 'node:path'
 import { octokit, repo, owner, Input } from '../utils'
 import sharp from 'sharp'
 
-type Team = {
-    index: number,
-    team: string,
-    played: number,
-    wins: number,
-    draws: number,
-    losses: number,
-    goalsScored: number,
-    goalsAgainst: number,
-    goalDifference: number,
-    points: number
+type Match = {
+    tour: number,
+    year: string,
+    team1: string,
+    team1Points: number,
+    team2: string,
+    team2Points: number
 }
 type structure = {
-    [year: string]: [Team]
+    [year: string]: Match[]
 }
 
-export class Charts {
+export class Calendar {
     path: string
     constructor() {
-        this.path = "Charts.json"
+        this.path = "Calendar.json"
     }
 
     async Init() {
         const methods = [
-            'გუნდის დამატება',
-            'გუნდის წაშლა',
+            'მატჩის დამატება',
+            'მატჩის წაშლა',
             'წლის ამოშლა',
         ]
 
@@ -41,38 +37,34 @@ export class Charts {
             case 0:
                 {
                     const year = await Input('წელი', String)
+                    const tour = await Input('ტური', Number)
 
-                    const played = await Input('ნათამაშები', Number)
-                    const wins = await Input('გამარჯვებები', Number)
-                    const draws = await Input('ფრეები', Number)
-                    const losses = await Input('წაგებები', Number)
-                    const goalsScored = await Input('გატანილი გოლები', Number)
-                    const goalsAgainst = await Input('საწინააღმდეგოდ გატანილი გოლები', Number)
+                    const team1 = await this.TeamIcon(await Input('1-ლი გუნდის ფოტო', String))
+                    const team1Points = await Input('1-ლი გუნდის ქულები', Number)
 
-                    const teamData: Team = {
-                        index: 0,
-                        team: await this.TeamIcon(await Input('გუნდის ფოტო', String)),
-                        played,
-                        wins,
-                        draws,
-                        losses,
-                        goalsScored,
-                        goalsAgainst,
-                        goalDifference: goalsScored - goalsAgainst,
-                        points: wins * 3 + draws * 1
+                    const team2 = await this.TeamIcon(await Input('მე-2 გუნდის ფოტო', String))
+                    const team2Points = await Input('მე-2 გუნდის ქულები', Number)
+
+                    const matchData: Match = {
+                        tour,
+                        year,
+                        team1,
+                        team1Points,
+                        team2,
+                        team2Points
                     }
 
-                    await this.AddTeam(year, teamData)
+                    await this.AddMatch(year, matchData)
                 }
                 break;
             case 1:
                 {
                     const year = await Input('წელი', String)
-                    const index = (await Input('გუნდის მიმდევრობა', String))
+                    const index = (await Input('მატჩის მიმდევრობა', String))
                         .split(' ')
                         .map(num => Number(num))
 
-                    await this.DeleteTeam(year, index)
+                    await this.DeleteMatch(year, index)
                 }
                 break;
             case 2:
@@ -90,8 +82,9 @@ export class Charts {
         try {
             const resolvedPath = path.resolve(inputPath)
             const buffer = await sharp(resolvedPath).resize(500).toBuffer()
-            const base64 = buffer.toString('base64');
-            const name = `images/charts-${Date.now()}.jpg`
+            const base64 = buffer.toString('base64')
+
+            const name = `images/calendar-${Date.now()}.jpeg`
 
             await octokit.rest.repos.createOrUpdateFileContents({
                 owner: owner!,
@@ -101,7 +94,7 @@ export class Charts {
                 message: 'ფოტოს ატვირთვა',
             });
 
-            return `https://raw.githubusercontent.com/${owner}/${repo}/main/${name}`
+            return name
         } catch (err: any) {
             console.error('TeamIcon failed:', err?.message ?? err)
             throw new Error(`ფოტოს ატვირთვა ვერ მოხერხდა: ${err?.message ?? err}`)
@@ -145,19 +138,19 @@ export class Charts {
         return { json, sha }
     }
 
-    async AddTeam(year: string, team: Team) {
+    async AddMatch(year: string, match: Match) {
         const { json, sha } = await this.GetCalendar();
 
         if (!json[year]) {
-            json[year] = [team] as [Team]
+            json[year] = [match]
         } else {
-            json[year]!.push(team)
+            json[year]!.push(match)
         }
 
-        return await this.UpdateFile(json, 'გუნდის დამატება', sha);
+        return await this.UpdateFile(json, 'მატჩის დამატება', sha);
     }
 
-    async DeleteTeam(year: string, indexes: number[]) {
+    async DeleteMatch(year: string, indexes: number[]) {
         const { json, sha } = await this.GetCalendar();
 
         // sort descending so earlier splices don't shift later indexes
@@ -165,7 +158,7 @@ export class Charts {
         for (const idx of sortedIndexes) {
             json[year]?.splice(idx, 1)
         }
-        return await this.UpdateFile(json, 'გუნდის წაშლა', sha)
+        return await this.UpdateFile(json, 'მატჩის წაშლა', sha)
     }
 
     async DeleteYear(year: string) {
