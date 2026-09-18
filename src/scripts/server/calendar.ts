@@ -1,4 +1,6 @@
-import { octokit, repo, owner } from '../utils'
+import path from 'node:path'
+import { octokit, repo, owner, Input } from '../utils'
+import sharp from 'sharp'
 
 type Team = {
     "index": number,
@@ -23,10 +25,45 @@ export class Calendar {
     }
 
     async Init() {
-        this.GetCalendar();
+        const methods = [
+            'გუნდის დამატება',
+            'გუნდის წაშლა',
+            'წლის ამოშლა',
+        ]
+
+        methods.map((entry, i) => {
+            console.log(`${[i]}.${entry}`)
+        })
+        const answer = await Input('არჩევანი', Number);
+
+        switch (answer) {
+            case 0:
+
+                break;
+
+            default:
+                break;
+        }
     }
 
-    async UpdateFile(json: structure , messege: string, sha: string){
+    async TeamIcon(path: string) {
+        const buffer = await sharp(path).resize(500).toBuffer()
+        const base64 = buffer.toString('base64')
+
+        const name = `images/calendar-${Date.now()}.jpg`
+        const imageUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${name}`
+
+        await octokit.rest.repos.createOrUpdateFileContents({
+            owner: owner!,
+            repo: repo!,
+            path: name,
+            content: base64,
+            message: 'ფოტოს ატვირთვა',
+        });
+        return imageUrl 
+    }
+
+    async UpdateFile(json: structure, messege: string, sha: string) {
         octokit.rest.repos.createOrUpdateFileContents({
             owner: owner!,
             repo: repo!,
@@ -62,9 +99,7 @@ export class Calendar {
         const { json, sha } = await this.GetCalendar();
         json[year]?.push(team);
 
-        const res = await this.UpdateFile(json, 'გუნდის ამოშლა', sha)
-
-        return res;
+        return await this.UpdateFile(json, 'გუნდის ამოშლა', sha);
     }
 
     async DeleteTeam(year: string, indexes: number[]) {
@@ -73,16 +108,13 @@ export class Calendar {
         for (let i = 0; i < indexes.length; i++) {
             json[year]?.splice(indexes[i]!, 1)
         }
-        const res = await this.UpdateFile(json, 'გუნდის წაშლა', sha)
-        return res
+        return await this.UpdateFile(json, 'გუნდის წაშლა', sha)
     }
 
     async DeleteYear(year: string) {
         const { json, sha } = await this.GetCalendar();
-
         delete json[year]
-        const res = await this.UpdateFile(json, 'წლის ამოშლა', sha)
 
-        return res
+        return await this.UpdateFile(json, 'წლის ამოშლა', sha)
     }
 }
