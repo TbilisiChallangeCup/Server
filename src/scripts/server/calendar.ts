@@ -39,33 +39,43 @@ export class Calendar {
         // Terminal
         switch (answer) {
             case 0:
-                const teamData = {
-                    index: 0,
-                    team: await this.TeamIcon(await Input('გუნდის ფოტო', String)),
-                    played: await Input('ნათამაშები', Number),
-                    wins: await Input('ნათამაშები', Number),
-                    draws: await Input('ნიჩიები', Number),
-                    losses: await Input('წაგებები', Number),
-                    goalsScored: await Input('გატანილი გოლები', Number),
-                    goalsAgainst: await Input('საწინააღმდეგოდ გატანილი გოლები', Number),
-                    points: 0
+                {
+                    const teamData = {
+                        index: 0,
+                        team: await this.TeamIcon(await Input('გუნდის ფოტო', String)),
+                        played: await Input('ნათამაშები', Number),
+                        wins: await Input('ნათამაშები', Number),
+                        draws: await Input('ნიჩიები', Number),
+                        losses: await Input('წაგებები', Number),
+                        goalsScored: await Input('გატანილი გოლები', Number),
+                        goalsAgainst: await Input('საწინააღმდეგოდ გატანილი გოლები', Number),
+                        points: 0
+                    }
+                    teamData.points = teamData.wins * 3 + teamData.draws * 1;
                 }
-                teamData.points = teamData.wins * 3 + teamData.draws * 1;
-            break;
-            case 1: 
-                const year = await Input('წელი', String)
-                const index = (await Input('გუნდის მიმდევრობა', String))
-                .split(' ')
-                .map(num => Number(num))
+                break;
+            case 1:
+                {
+                    const year = await Input('წელი', String)
+                    const index = (await Input('გუნდის მიმდევრობა', String))
+                        .split(' ')
+                        .map(num => Number(num))
 
-                await this.DeleteTeam(year, index)
-            break;
+                    await this.DeleteTeam(year, index)
+                }
+                break;
+            case 2:
+                {
+                    const year = await Input('წელი', String)
+                    await this.DeleteYear(year);
+                }
+                break;
 
             default: break;
         }
     }
 
-    async TeamIcon(path: string) : Promise<string> {
+    async TeamIcon(path: string): Promise<string> {
         const buffer = await sharp(path).resize(500).toBuffer()
         const base64 = buffer.toString('base64')
 
